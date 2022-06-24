@@ -2,9 +2,11 @@ import logging
 
 import azure.functions as func
 
+import shared_code.MyOpenCensus
+logger = logging.getLogger(__name__)
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('This is Python throw exception!')
+    logger.info('This is Python throw exception!')
     raise ValueError("my exception!")
     return func.HttpResponse("This is Python throw exception!")
 

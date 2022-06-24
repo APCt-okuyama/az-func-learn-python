@@ -1,12 +1,19 @@
 import logging
+import os
 
 import azure.functions as func
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 
-from opencensus.extension.azure.functions import OpenCensusExtension
-logger = logging.getLogger('HttpTriggerLogger')
+import shared_code.MyOpenCensus
+logger = logging.getLogger(__name__)
 
-# 初期化
-OpenCensusExtension.configure() 
+def callback_function(envelope):
+   envelope.tags['ai.cloud.role'] = 'my_new_role_name'
+   return True
+
+handler = AzureLogHandler(connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"])
+handler.add_telemetry_processor(callback_function)
+logger.addHandler(handler)
 
 def main(req: func.HttpRequest, context) -> func.HttpResponse:
 

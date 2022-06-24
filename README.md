@@ -44,7 +44,8 @@ az group create -n %RG_NAME% -l %LOCATION%
 az storage account create -n funcstorage0001 -g %RG_NAME% -l %LOCATION% --sku Standard_LRS --kind StorageV2
 az storage account show-connection-string -g %RG_NAME% -n funcstorage0001
 
-( pythonを利用するので `--os-type linux` を指定します。 )
+
+( pythonを利用するので `--os-type linux` を指定します。 検証目的なので従量課金)
 az functionapp create -g %RG_NAME% --consumption-plan-location %LOCATION% --runtime python --runtime-version 3.9 --functions-version 4 --name my-example-func-py --os-type linux --storage-account funcstorage0001 --app-insights my-example-app-insights 
 ```
 
