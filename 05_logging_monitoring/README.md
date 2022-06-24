@@ -84,7 +84,13 @@ opencensus-python-extensions-azure(python用)の利用について
 
 ## Monitoring
 
-### Portal画面から確認できる内容
+### Application Insightsで確認
+
+●アプリケーション マップ
+
+●ライブメトリック
+従量課金プランだとスケールアウトの設定を1にしても複数起動しているように見える
+
 
 ### 必要な情報をまとめてダッシュボードで監視する
 

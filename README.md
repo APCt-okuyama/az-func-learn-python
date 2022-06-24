@@ -45,7 +45,7 @@ az storage account create -n funcstorage0001 -g %RG_NAME% -l %LOCATION% --sku St
 az storage account show-connection-string -g %RG_NAME% -n funcstorage0001
 
 ( pythonを利用するので `--os-type linux` を指定します。 )
-az functionapp create -g %RG_NAME% --consumption-plan-location %LOCATION% --runtime python --runtime-version 3.9 --functions-version 4 --name my-example-func-py --os-type linux --storage-account funcstorage0001
+az functionapp create -g %RG_NAME% --consumption-plan-location %LOCATION% --runtime python --runtime-version 3.9 --functions-version 4 --name my-example-func-py --os-type linux --storage-account funcstorage0001 --app-insights my-example-app-insights 
 ```
 
 ※従量課金プランで作成しているので開発中は不用意にスケーリングされないようにScaleLimitを設定しておきます。
@@ -74,7 +74,7 @@ func init --python
 # 関数の追加
 func new
 
-# 関数のデプロイ
+# 関数のデプロイ (windowsからはremote buildになります)
 func azure functionapp publish my-example-func-py
 func azure functionapp publish my-example-func-py --publish-local-settings -y
 
