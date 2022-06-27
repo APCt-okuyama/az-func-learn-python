@@ -2,24 +2,42 @@
 
 Functions(Python)でのLogging, Monitoring について簡単に。
 
-# 1. Application Insightsの設定
-
 基本的にApplication Insights(ワークスペース ベース)を利用する。
 ※ワークスペース ベースではApplication Insights テレメトリを共通の Log Analytics ワークスペースに送信できる。ログを 1 つの統合された場所に保持できる。
+
+## Azure Monitorについて (Azure の監視サービス)
+Application Insights, Azure Monitor, Log Analytics, Worksace...　といろいろな言葉が出てきて紛らわしいので少し纏める。
+
+![image](./img/005.PNG)
+Azure Monitorの概要は上記の図のようになっており、Application InsightsやLog Analytics などを含んでいる。
+
+| サービス名 | 特徴 |
+| --- | --- |
+| Azure Monitor | 監視サービスの総称<br>Application InsightsやLog Analyticsを含んでいる。portal画面からアクセスできる<br>サービスによって多少ことなることがあるが共通している。<br>[概要][アクティビティ ログ]<br>[監視]セクション |
+| Application Insights  | 製品のパフォーマンスのレベルを監視または測定し、エラーを診断する具体的な機能 |
+| Log Analytics | Azure portalのツール<br> ログ クエリの編集と実行に使用する。|
+
+(例) Azure Functions の場合の概要や監視、これらがAzure Monitorと呼ばれる機能になる。
+![image](./img/006.PNG) ![image](./img/007.PNG) 
+
+
+
+# 1. Application Insightsの設定
 
 Application Insightsを利用します。
 デフォルトではfunctionsと同じ名前で自動的にapp-insightsが作成される ※これはclassicタイプ
 
-拡張機能の追加
+拡張機能の追加(az monitor app-insightsを利用するのに必要)
 ```
 az extension add -n application-insights
 ```
-```
-workspaceの作成
-az monitor log-analytics workspace create --resource-group %RG_NAME% --workspace-name my-example-workspace
 
-app-insightsの作成
-az monitor app-insights component create --app my-example-app-insights --location %LOCATION% --kind web -g %RG_NAME% --workspace "/subscriptions/d79e0410-8e3c-4207-8d0a-1f7885d35859/resourcegroups/%RG_NAME%/providers/microsoft.operationalinsights/workspaces/my-example-workspace"
+```
+# workspaceの作成
+az monitor log-analytics workspace create --resource-group $RG_NAME --workspace-name my-example-workspace
+
+# app-insightsの作成
+az monitor app-insights component create --app my-example-app-insights --location $LOCATION --kind web -g $RG_NAME --workspace "/subscriptions/$SUBSCRIPTION/resourcegroups/$RG_NAME/providers/microsoft.operationalinsights/workspaces/my-example-workspace"
 ```
 
 functionの作成

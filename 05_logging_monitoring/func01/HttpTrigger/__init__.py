@@ -7,11 +7,19 @@ from opencensus.ext.azure.log_exporter import AzureLogHandler
 import shared_code.MyOpenCensus
 logger = logging.getLogger(__name__)
 
+# (注意)
+# クラウド ロール名を設定またはオーバーライドする
+# Application Insights SDK または Agent では、Azure App Service 環境の
+# コンポーネントで生成されたテレメトリにクラウド ロール名プロパティが自動的に
+# 追加されます。
+#
+# アプリケーションマップの表示を変更したかったけど、
+# Functionsではオーバーライドするできないということ。かな。
 def callback_function(envelope):
    envelope.tags['ai.cloud.role'] = 'my_new_role_name'
    return True
-
-handler = AzureLogHandler(connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"])
+#handler = AzureLogHandler(connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"])
+handler = AzureLogHandler()
 handler.add_telemetry_processor(callback_function)
 logger.addHandler(handler)
 

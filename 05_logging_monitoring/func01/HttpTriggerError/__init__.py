@@ -1,9 +1,19 @@
 import logging
+import os
 
 import azure.functions as func
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 import shared_code.MyOpenCensus
 logger = logging.getLogger(__name__)
+
+def callback_function(envelope):
+   envelope.tags['ai.cloud.role'] = 'my_new_role_name2'
+   return True
+#handler = AzureLogHandler(connection_string=os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"])
+handler = AzureLogHandler()
+handler.add_telemetry_processor(callback_function)
+logger.addHandler(handler)
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logger.info('This is Python throw exception!')

@@ -14,6 +14,7 @@ https://docs.microsoft.com/ja-jp/azure/azure-functions/functions-scale
 ## 準備
 
 ※可能か限り最新のものを利用する
+※pyenv をインストールしておくと便利 (option)
 
 ```
 az version
@@ -30,39 +31,53 @@ Python 3.9.11
 ```
 export RG_NAME=az-func-example-rg
 export LOCATION=japaneast
+export SUBSCRIPTION=d79e0410-8e3c-4207-8d0a-1f7885d35859
 ```
 環境変数(win)
 ```
 set RG_NAME=az-func-example-rg
 set LOCATION=japaneast
+set SUBSCRIPTION=d79e0410-8e3c-4207-8d0a-1f7885d35859
 ```
 
-## Azureリソース
-```
-az group create -n %RG_NAME% -l %LOCATION%
+## Azureリソースの準備
 
-az storage account create -n funcstorage0001 -g %RG_NAME% -l %LOCATION% --sku Standard_LRS --kind StorageV2
-az storage account show-connection-string -g %RG_NAME% -n funcstorage0001
+```
+az group create -n $RG_NAME -l $LOCATION
+
+az storage account create -n funcstorage0001 -g $RG_NAME -l $LOCATION --sku Standard_LRS --kind StorageV2
+az storage account show-connection-string -g $RG_NAME -n funcstorage0001
 
 
 ( pythonを利用するので `--os-type linux` を指定します。 検証目的なので従量課金)
-az functionapp create -g %RG_NAME% --consumption-plan-location %LOCATION% --runtime python --runtime-version 3.9 --functions-version 4 --name my-example-func-py --os-type linux --storage-account funcstorage0001 --app-insights my-example-app-insights 
+az functionapp create -g $RG_NAME --consumption-plan-location $LOCATION --runtime python --runtime-version 3.9 --functions-version 4 --name my-example-func-py --os-type linux --storage-account funcstorage0001 --app-insights my-example-app-insights 
 ```
 
 ※従量課金プランで作成しているので開発中は不用意にスケーリングされないようにScaleLimitを設定しておきます。
 ```
-az resource update --resource-type Microsoft.Web/sites -g %RG_NAME% -n my-example-func-py/config/web --set properties.functionAppScaleLimit=1
+az resource update --resource-type Microsoft.Web/sites -g $RG_NAME -n my-example-func-py/config/web --set properties.functionAppScaleLimit=1
 ```
 
 FTPベースのデプロイは利用しない場合無効にしておく
 ```
-az webapp config set --name my-example-func-py --resource-group %RG_NAME% --ftps-state Disabled
+az webapp config set --name my-example-func-py --resource-group $RG_NAME --ftps-state Disabled
 ```
 
 ## Python 仮想環境を作成してアクティブにする
+
+windows
 ```
 py -m venv .venv
 .venv\scripts\activate
+```
+linux
+```
+python -m venv .venv
+source .venv/bin/activate
+```
+
+## ライブラリーのインストール
+```
 python -m pip install -r requirements.txt
 ```
 
@@ -79,6 +94,10 @@ func new
 func azure functionapp publish my-example-func-py
 func azure functionapp publish my-example-func-py --publish-local-settings -y
 
+# -b local
+# ローカルビルド オプション (こちらのがすこし早い？。linuxで開発しているときに利用, windows開発環境では推奨されない)
+func azure functionapp publish my-example-func-py -b local
+
 # ログの確認
 func azure functionapp logstream my-example-func-py
 ```
@@ -91,4 +110,26 @@ curl http://localhost:7071/api/orchestrators/orchestrationTrigger
 # (注意) 不要になったら削除する
 ```
 az group delete --name az-func-example-rg -y
+```
+
+
+# pyenv
+
+必要最低限のコマンド
+
+```
+# インストール可能な一覧
+pyenv install --list
+
+# インストール アンインストール
+pyenv install 3.9.11
+pyenv uninstall 3.9.11
+
+# インストール済み一覧
+pyenv versions
+
+# バージョンの切り替え (global or local)
+pyenv global 3.9.11
+pyenv local 3.9.11
+  python --version で確認する
 ```
