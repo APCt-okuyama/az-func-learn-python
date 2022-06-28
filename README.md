@@ -35,20 +35,38 @@ export SUBSCRIPTION=d79e0410-8e3c-4207-8d0a-1f7885d35859
 ```
 環境変数(win)
 ```
-set RG_NAME=az-func-example-rg
+set RG_NAME=az-func-example-rg1
 set LOCATION=japaneast
 set SUBSCRIPTION=d79e0410-8e3c-4207-8d0a-1f7885d35859
 ```
 
 ## Azureリソースの準備
 
+リソースグループ
 ```
 az group create -n $RG_NAME -l $LOCATION
 
+(注意) 不要になったら削除する
+az group delete --name az-func-example-rg -y
+```
+
+app-insights
+```
+# workspaceの作成
+az monitor log-analytics workspace create --resource-group $RG_NAME --workspace-name my-example-workspace
+
+# app-insightsの作成
+az monitor app-insights component create --app my-example-app-insights --location $LOCATION --kind web -g $RG_NAME --workspace "/subscriptions/$SUBSCRIPTION/resourcegroups/$RG_NAME/providers/microsoft.operationalinsights/workspaces/my-example-workspace"
+```
+
+storage
+```
 az storage account create -n funcstorage0001 -g $RG_NAME -l $LOCATION --sku Standard_LRS --kind StorageV2
 az storage account show-connection-string -g $RG_NAME -n funcstorage0001
+```
 
-
+### (従量課金)
+```
 ( pythonを利用するので `--os-type linux` を指定します。 検証目的なので従量課金)
 az functionapp create -g $RG_NAME --consumption-plan-location $LOCATION --runtime python --runtime-version 3.9 --functions-version 4 --name my-example-func-py --os-type linux --storage-account funcstorage0001 --app-insights my-example-app-insights 
 ```
@@ -61,6 +79,19 @@ az resource update --resource-type Microsoft.Web/sites -g $RG_NAME -n my-example
 FTPベースのデプロイは利用しない場合無効にしておく
 ```
 az webapp config set --name my-example-func-py --resource-group $RG_NAME --ftps-state Disabled
+```
+
+### (プレミアムプラン) EP1
+
+プランを作成
+```
+az functionapp plan create --resource-group $RG_NAME --name my-func-PremiumPlan --location $LOCATION --number-of-workers 1 --sku EP1 --is-linux
+
+Function作成(--app-insightsなどを指定)
+az functionapp create --name my-example-func-py --storage-account funcstorage0001 --resource-group $RG_NAME --plan my-func-PremiumPlan --runtime python --runtime-version 3.9 --functions-version 4 --app-insights my-example-app-insights
+
+Function作成(--app-insightsなどを指定)　コンテナ
+az functionapp create --name my-example-func-py-container --storage-account funcstorage0001 --resource-group $RG_NAME --plan my-func-PremiumPlan --functions-version 4 --deployment-container-image-name tokym/my-func-py-image:v1.0.0 --app-insights my-example-app-insights
 ```
 
 ## Python 仮想環境を作成してアクティブにする
@@ -90,7 +121,7 @@ func init --python
 # 関数の追加
 func new
 
-# 関数のデプロイ (windowsからはremote buildになります)
+# 関数のデプロイ (defaultはremote build)
 func azure functionapp publish my-example-func-py
 func azure functionapp publish my-example-func-py --publish-local-settings -y
 
@@ -106,12 +137,6 @@ func azure functionapp logstream my-example-func-py
 ```
 curl http://localhost:7071/api/orchestrators/orchestrationTrigger
 ```
-
-# (注意) 不要になったら削除する
-```
-az group delete --name az-func-example-rg -y
-```
-
 
 # pyenv
 

@@ -73,20 +73,35 @@ exception(例外)もApplication Insightsで監視できるのでエラー処理�
 raise ValueError("my error!")
 ```
 
-### ログの確認(CLI)
-Core Toolのコマンドで確認
-従量課金プランの Linux 上で実行されているアプリでは、この方法を使用できない。
-```
-func azure functionapp logstream my-example-func-py
-```
-
-### ログの確認
+## ログの確認
 
 ![image](./img/001.PNG)
 | -| 確認方法 |
 | --- | --- |
 | ログ |　tracesテーブル を KQLで検索 |
-| ログ ストリーム | ポータルのストリーム画面<br>反応がわるいときがある。とくに従量課金プランの場合。 |
+| ログ ストリーム | ポータルのストリーム画面<br>反応がわるいときがある。とくに従量課金プランの場合?。<br>errorログしか出力されていない。要確認 |
+
+### ストリーム
+ログをファイルシステムへ出力し、ログ ストリームで確認
+(FileIOが発生するので高パフォーマンスを求められるシステムでは本番運用ではOffにするなど要検討)
+![image](./img/011.PNG)
+![image](./img/010.PNG)
+
+CLI(コマンドラインツール)でのログをストリーミングすることも可能
+従量課金プランの Linux 上で実行されているアプリでは、この方法を使用できない。
+```
+func azure functionapp logstream my-example-func-py4
+Retrieving Function App...
+2022-06-28T04:40:33  Welcome, you are now connected to log-streaming service.
+
+Starting Log Tail -n 10 of existing logs ----
+```
+
+### Monitor Log (KQL)
+![image](./img/012.PNG)
+KQLの基本的な利用方法だけ習得する。RDBのSQLのようにログを検索し表示することが可能。結果の集計や結合などを利用して円グラフや棒グラフとして表現することが可能。
+作成したクエリは保存してダッシュボードに表示することができる。
+
 
 ### ログレベル(ログの量)の設定
 host.json で調整可能
@@ -100,10 +115,19 @@ host.json で調整可能
 ```
 
 ## カスタム テレメトリをログに記録する
+
 opencensus-python-extensions-azure(python用)の利用について
 
 
 ## Monitoring
+
+Functionsのインスタンス数、CPU、メモリーなど基本的な項目を監視する。
+
+### メトリック ポータル(Azure Monitor)で確認できる
+メモリ ワーキング セット、実行回数、CPU利用率などをAzure Monitorを利用して確認する
+![image](./img/008.PNG)
+
+スコープにapp-insightsを選択すると、app-insightsに統合されているサービスのメトリックをすべて参照できる。
 
 ### Application Insightsで確認
 
@@ -112,16 +136,14 @@ opencensus-python-extensions-azure(python用)の利用について
 
 ![004](./img/004.PNG)
 
-クラウド ロール名を設定またはオーバーライドする
-
 ●ライブメトリック
 ほぼリアルタイムでリクエスト数やサーバーの数を確認することが可能。
 
 ![003](./img/003.PNG)
 従量課金プランだとスケールアウトの設定を1にしても複数起動しているように見える
 
-
 ### 必要な情報をまとめてダッシュボードで監視する
+(Functionsのメトリックをダッシュボードに纏めた例)
+![image](./img/009.PNG)
+運用中だけでなく開発中も含めてメトリック(CPU, Memory,リクエスト数)を確認することは高頻度で行うことになります。開発中に必要なダッシュボードの作成をおこなっておくことでパフォーマンステストなどににも利用可能になるので必要なダッシュボードを開発中に作成しておくのがお勧め。
 
-### KQL
-基本的な利用方法だけ覚えて利用する
