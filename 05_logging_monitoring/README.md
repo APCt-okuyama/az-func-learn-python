@@ -66,7 +66,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.error('This is logging.error.')
     logging.warning('This is logging.warning.')  
     logging.info('This is logging.info.')
-    logging.debug('This is logging.debug.')
+    logging.debug('This is logging.debug.') #これは出力されない？？
 ```
 
 exception(例外)もApplication Insightsで監視できるのでエラー処理に適切に利用する
@@ -114,10 +114,35 @@ host.json で調整可能
       "default":"Information"
     },
 ```
+※公式のドキュメントでは以下のように定義されているが、Logを見ると少し違う？
+```
+Trace 0
+Debug 1
+Information 2
+Warning 3
+Error 4
+Critical 5
+None 6
+```
+## ログのサンプリング
+テレメトリ データが生成されすぎないようにするサンプリング機能があります。
+しきい値を超えると、受信したデータをランダムに無視する。
+```
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": false,
+        "excludedTypes": "Request"
+      }
+    }
+```
 
-## カスタム テレメトリをログに記録する
+## カスタム テレメトリをログに記録する　★
 
-opencensus-python-extensions-azure(python用)の利用について調査中。。。
+★opencensus-python-extensions-azure(python用)の利用について調査中。。。
+★OpenTelemetoryも調査
 
 
 # Monitoring
