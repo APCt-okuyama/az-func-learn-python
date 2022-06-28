@@ -22,7 +22,7 @@ Azure Monitorの概要は上記の図のようになっており、Application I
 
 
 
-# 1. Application Insightsの設定
+## Application Insightsの設定
 
 Application Insightsを利用します。
 デフォルトではfunctionsと同じ名前で自動的にapp-insightsが作成される ※これはclassicタイプ
@@ -32,6 +32,7 @@ Application Insightsを利用します。
 az extension add -n application-insights
 ```
 
+ワークスペースベースのApplication Insightsを作成する
 ```
 # workspaceの作成
 az monitor log-analytics workspace create --resource-group $RG_NAME --workspace-name my-example-workspace
@@ -40,14 +41,14 @@ az monitor log-analytics workspace create --resource-group $RG_NAME --workspace-
 az monitor app-insights component create --app my-example-app-insights --location $LOCATION --kind web -g $RG_NAME --workspace "/subscriptions/$SUBSCRIPTION/resourcegroups/$RG_NAME/providers/microsoft.operationalinsights/workspaces/my-example-workspace"
 ```
 
-functionの作成
+Application Insightsを指定してfunctionの作成
 ```
 az functionapp create <xxxxx>
 ```
 ※無効にしたい場合は `--disable-app-insights`
 ※既存のapp-insightsを利用する場合は `--app-insights` `--app-insights-key`
 
-# 2. Logging
+# Logging
 
 ## アプリケーションのログ
 
@@ -83,7 +84,7 @@ raise ValueError("my error!")
 
 ### ストリーム
 ログをファイルシステムへ出力し、ログ ストリームで確認
-(FileIOが発生するので高パフォーマンスを求められるシステムでは本番運用ではOffにするなど要検討)
+(FileIOが発生するので高パフォーマンスを求められるシステムでは本番運用ではOffにする。)
 ![image](./img/011.PNG)
 ![image](./img/010.PNG)
 
@@ -116,22 +117,22 @@ host.json で調整可能
 
 ## カスタム テレメトリをログに記録する
 
-opencensus-python-extensions-azure(python用)の利用について
+opencensus-python-extensions-azure(python用)の利用について調査中。。。
 
 
-## Monitoring
+# Monitoring
 
 Functionsのインスタンス数、CPU、メモリーなど基本的な項目を監視する。
 
-### メトリック ポータル(Azure Monitor)で確認できる
+## ポータルのメトリック(Azure Monitor)で確認
 メモリ ワーキング セット、実行回数、CPU利用率などをAzure Monitorを利用して確認する
 ![image](./img/008.PNG)
 
 スコープにapp-insightsを選択すると、app-insightsに統合されているサービスのメトリックをすべて参照できる。
 
-### Application Insightsで確認
+## Application Insightsで確認
 
-●アプリケーション マップ
+アプリケーション マップ
 各アプリケーションの連携をマップとして表示してくれます。エラーの情報も表示されるので分散/マイクロサービス アプリケーションの正常性の確認に便利です。
 
 ![004](./img/004.PNG)
@@ -142,8 +143,30 @@ Functionsのインスタンス数、CPU、メモリーなど基本的な項目�
 ![003](./img/003.PNG)
 従量課金プランだとスケールアウトの設定を1にしても複数起動しているように見える
 
-### 必要な情報をまとめてダッシュボードで監視する
+## 必要な情報をまとめてダッシュボードで監視する
 (Functionsのメトリックをダッシュボードに纏めた例)
 ![image](./img/009.PNG)
 運用中だけでなく開発中も含めてメトリック(CPU, Memory,リクエスト数)を確認することは高頻度で行うことになります。開発中に必要なダッシュボードの作成をおこなっておくことでパフォーマンステストなどににも利用可能になるので必要なダッシュボードを開発中に作成しておくのがお勧め。
 
+# Alert (Azure Monitorの機能)
+
+ログやメトリックを監視してアラートを出す。
+
+# Azure Monitorのコスト(料金)について
+
+https://azure.microsoft.com/ja-jp/pricing/details/monitor/#pricing
+
+
+取り込むデータに対して課金
+| 価格レベル |　GB あたりの有効価格 |
+| --- | --- |
+| 従量課金制 | ¥424.598/GB |
+| 100 GB/日 | ¥36,128.93/日 |
+| 200 GB/日 | ¥67,833.90/日 |
+
+保持
+|機能|含まれている保持日数|料金|
+| --- | --- | --- |
+|データ保持|31 日間 (または Sentinel が有効になっている場合は 90 日間)、Application Insights データについては 90 日間| 1 GB あたり ¥19.069/月|
+
+「ログ データのアーカイブと復元」、「ログ データのエクスポート」などにも料金が発生。

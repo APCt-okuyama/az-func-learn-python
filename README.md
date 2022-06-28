@@ -88,7 +88,7 @@ az webapp config set --name my-example-func-py --resource-group $RG_NAME --ftps-
 az functionapp plan create --resource-group $RG_NAME --name my-func-PremiumPlan --location $LOCATION --number-of-workers 1 --sku EP1 --is-linux
 
 Function作成(--app-insightsなどを指定)
-az functionapp create --name my-example-func-py --storage-account funcstorage0001 --resource-group $RG_NAME --plan my-func-PremiumPlan --runtime python --runtime-version 3.9 --functions-version 4 --app-insights my-example-app-insights
+az functionapp create --name my-example-func-py1 --storage-account funcstorage0001 --resource-group $RG_NAME --plan my-func-PremiumPlan --runtime python --runtime-version 3.9 --functions-version 4 --app-insights my-example-app-insights
 
 Function作成(--app-insightsなどを指定)　コンテナ
 az functionapp create --name my-example-func-py-container --storage-account funcstorage0001 --resource-group $RG_NAME --plan my-func-PremiumPlan --functions-version 4 --deployment-container-image-name tokym/my-func-py-image:v1.0.0 --app-insights my-example-app-insights
@@ -122,20 +122,20 @@ func init --python
 func new
 
 # 関数のデプロイ (defaultはremote build)
-func azure functionapp publish my-example-func-py
-func azure functionapp publish my-example-func-py --publish-local-settings -y
+func azure functionapp publish my-example-func-py1
+func azure functionapp publish my-example-func-py1 --publish-local-settings -y
 
 # -b local
-# ローカルビルド オプション (こちらのがすこし早い？。linuxで開発しているときに利用, windows開発環境では推奨されない)
-func azure functionapp publish my-example-func-py -b local
+# ローカルビルド オプション (こちらのがすこし早い？。linuxで開発しているときに利用, windows開発環境では推奨されない。とりあえずは標準のリモートビルドで問題なしかな。)
+func azure functionapp publish my-example-func-py1 -b local
 
 # ログの確認
-func azure functionapp logstream my-example-func-py
+func azure functionapp logstream my-example-func-py1
 ```
 
 # 確認
 ```
-curl http://localhost:7071/api/orchestrators/orchestrationTrigger
+curl https://my-example-func-py1.azurewebsites.net/api/httptrigger
 ```
 
 # pyenv
