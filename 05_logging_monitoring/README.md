@@ -139,12 +139,6 @@ None 6
     }
 ```
 
-## カスタム テレメトリをログに記録する　★
-
-★opencensus-python-extensions-azure(python用)の利用について調査中。。。
-★OpenTelemetoryも調査
-
-
 # Monitoring
 
 Functionsのインスタンス数、CPU、メモリーなど基本的な項目を監視する。
@@ -200,3 +194,84 @@ https://azure.microsoft.com/ja-jp/pricing/details/monitor/#pricing
 |データ保持|31 日間 (または Sentinel が有効になっている場合は 90 日間)、Application Insights データについては 90 日間| 1 GB あたり ¥19.069/月|
 
 「ログ データのアーカイブと復元」、「ログ データのエクスポート」、「アラートルール」などにも料金が発生。
+
+# カスタム テレメトリ (opencensusの利用)
+
+https://docs.microsoft.com/ja-jp/azure/azure-monitor/app/opencensus-python
+
+OpenCensus が OpenTelemetry に統合されつつあるが OpenTelemetry が成熟するまでは Microsoft は OpenCensus を利用するのをお勧めしています。
+
+Azure Monitor エクスポーターを利用して、収集したメトリックを Applicaiton Insights に送信します。
+
+## テレメトリの種類
+
+| 要素 | Azure Monitorのテレメトリ | 備考 |
+| --- | --- | --- |
+| ログ | Traces<br>exceptioins<br>customEvents |  |
+| メトリック | customMetrics<br>performanceCounters |  |
+| トレース | Requests<br>dependencies |  |
+
+
+
+## Functionsでのカスタム テレメトリ(OpenCensus) の利用
+![image](./img/015.png)
+
+Functionsで OpenCensus を利用する場合は、OpenCensus Python Azure Functions 拡張機能を使用する。
+
+拡張機能を利用する場合に必要
+```
+    "PYTHON_ENABLE_WORKER_EXTENSIONS": 1,
+```
+
+requestsを利用する場合に必要
+```
+    "PYTHON_ISOLATE_WORKER_DEPENDENCIES": 1
+```
+
+### Redis, Postgres SQL, Cosmos DBを使ってOpenCensusを確認
+
+各Functionsから各リソースにアクセスする
+
+![image](./img/016.png)
+
+●各リソースを作成
+
+1. redis
+```
+az redis create --location $LOCATION --name my-example-rediscache --resource-group $RG_NAME --sku Basic --vm-size c0
+```
+
+2. storage queue
+```
+az storage queue create -n my-example-queue --metadata key1=value1 key2=value2 --account-name funcstorage0001
+```
+
+3. postgres sql
+```
+az postgres server create -l $LOCATION -g $RG_NAME -n my-example-pg-server -u myadmin -p Password@123 --sku-name GP_Gen5_2
+az postgres db create -g $RG_NAME -s my-example-pg-server -n my-example-pg-db
+```
+
+4. cosmos db
+```
+az cosmosdb create --name my-example-cosmosdb-account --resource-group $RG_NAME --subscription $SUBSCRIPTION
+```
+
+### Functionsを実装
+
+| 関数名 | trigger | inpurt | (処理) | output |
+| :--- | :--: | :--: | :---: | :---: |
+| func1 | http | query prame (my tx id) | redisへ書き込む | storage queue |
+| func2 | storage queue | storage queue | postgresへ書き込む | cosmos db |
+| func3 | cosmos db | N/A | ログ出力のみ | N/A |
+
+★opencensus-python-extensions-azure(python用)の利用について調査中。。。
+★できたらOpenTelemetoryも調査
+
+
+
+## 分散トレーシングとは
+https://docs.microsoft.com/ja-jp/azure/azure-monitor/app/distributed-tracing#how-to-enable-distributed-tracing
+
+
+## graphanaの利用
