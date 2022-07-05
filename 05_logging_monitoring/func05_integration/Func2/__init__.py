@@ -8,5 +8,5 @@ OpenCensusExtension.configure()
 
 def main(context, msg: func.QueueMessage) -> None:
     with context.tracer.span("parent"):
-        logging.info('Python queue trigger function processed a queue item: %s',
+        logging.info('func2 a queue item: %s',
                  msg.get_body().decode('utf-8'))

@@ -153,6 +153,7 @@ Functionsのインスタンス数、CPU、メモリーなど基本的な項目�
 
 アプリケーション マップ
 各アプリケーションの連携をマップとして表示してくれます。エラーの情報も表示されるので分散/マイクロサービス アプリケーションの正常性の確認に便利です。
+※対応しているサービスであればきれいに表示されるが、未対応のものも多そうなのでほどほどに活用する。
 
 ![004](./img/004.PNG)
 
@@ -223,7 +224,7 @@ Functionsで OpenCensus を利用する場合は、OpenCensus Python Azure Funct
     "PYTHON_ENABLE_WORKER_EXTENSIONS": 1,
 ```
 
-requestsを利用する場合に必要
+requestsなど(?)を利用する場合に必要
 ```
     "PYTHON_ISOLATE_WORKER_DEPENDENCIES": 1
 ```

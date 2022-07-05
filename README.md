@@ -31,13 +31,13 @@ Python 3.9.11
 ```
 export RG_NAME=az-func-example-rg
 export LOCATION=japaneast
-export SUBSCRIPTION=d79e0410-8e3c-4207-8d0a-1f7885d35859
+export SUBSCRIPTION=xxxx
 ```
 環境変数(win)
 ```
 set RG_NAME=az-func-example-rg1
 set LOCATION=japaneast
-set SUBSCRIPTION=d79e0410-8e3c-4207-8d0a-1f7885d35859
+set SUBSCRIPTION=xxxx
 ```
 
 ## Azureリソースの準備
@@ -47,7 +47,7 @@ set SUBSCRIPTION=d79e0410-8e3c-4207-8d0a-1f7885d35859
 az group create -n $RG_NAME -l $LOCATION
 
 (注意) 不要になったら削除する
-az group delete --name az-func-example-rg -y
+az group delete --name $RG_NAME -y
 ```
 
 app-insights
@@ -65,7 +65,7 @@ az storage account create -n funcstorage0001 -g $RG_NAME -l $LOCATION --sku Stan
 az storage account show-connection-string -g $RG_NAME -n funcstorage0001
 ```
 
-### (従量課金)
+### 従量課金プラン
 ```
 ( pythonを利用するので `--os-type linux` を指定します。 検証目的なので従量課金)
 az functionapp create -g $RG_NAME --consumption-plan-location $LOCATION --runtime python --runtime-version 3.9 --functions-version 4 --name my-example-func-py --os-type linux --storage-account funcstorage0001 --app-insights my-example-app-insights 
@@ -81,14 +81,14 @@ FTPベースのデプロイは利用しない場合無効にしておく
 az webapp config set --name my-example-func-py --resource-group $RG_NAME --ftps-state Disabled
 ```
 
-### (プレミアムプラン) EP1
+### プレミアムプラン (EP1)
 
 プランを作成
 ```
 az functionapp plan create --resource-group $RG_NAME --name my-func-PremiumPlan --location $LOCATION --number-of-workers 1 --sku EP1 --is-linux
 
 Function作成(--app-insightsなどを指定)
-az functionapp create --name my-example-func-py1 --storage-account funcstorage0001 --resource-group $RG_NAME --plan my-func-PremiumPlan --runtime python --runtime-version 3.9 --functions-version 4 --app-insights my-example-app-insights
+az functionapp create --name my-example-func-py --storage-account funcstorage0001 --resource-group $RG_NAME --plan my-func-PremiumPlan --runtime python --runtime-version 3.9 --functions-version 4 --app-insights my-example-app-insights
 
 Function作成(--app-insightsなどを指定)　コンテナ
 az functionapp create --name my-example-func-py-container --storage-account funcstorage0001 --resource-group $RG_NAME --plan my-func-PremiumPlan --functions-version 4 --deployment-container-image-name tokym/my-func-py-image:v1.0.0 --app-insights my-example-app-insights
@@ -122,12 +122,18 @@ func init --python
 func new
 
 # 関数のデプロイ (defaultはremote build)
-func azure functionapp publish my-example-func-py1
-func azure functionapp publish my-example-func-py1 --publish-local-settings -y
+func azure functionapp publish my-example-func-py
+func azure functionapp publish my-example-func-py --publish-local-settings -y
 
 # -b local
 # ローカルビルド オプション (こちらのがすこし早い？。linuxで開発しているときに利用, windows開発環境では推奨されない。とりあえずは標準のリモートビルドで問題なしかな。)
 func azure functionapp publish my-example-func-py1 -b local
+
+# Azure上のアプリケーション設定をlocal.setting.json取り込む
+func azure functionapp fetch-app-settings my-example-func-py
+
+# logをfilesystemへ書き出すように設定 (Linux従量課金プランではできない)
+az webapp log config --name my-example-func-py --resource-group $RG_NAME --web-server-logging filesystem
 
 # ログの確認
 func azure functionapp logstream my-example-func-py1
