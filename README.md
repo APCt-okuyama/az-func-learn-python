@@ -165,4 +165,4 @@ pyenv local 3.9.11
   python --version で確認する
 ```
 
-aaaa
+test
