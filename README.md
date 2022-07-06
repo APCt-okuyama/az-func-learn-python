@@ -62,7 +62,7 @@ az monitor app-insights component create --app my-example-app-insights --locatio
 storage
 ```
 az storage account create -n funcstorage0001 -g $RG_NAME -l $LOCATION --sku Standard_LRS --kind StorageV2
-az storage account show-connection-string -g $RG_NAME -n funcstorage0001
+az storage account show-connection-string -g $RG_NAME -n funcstorage0001 -o tsv
 ```
 
 ### 従量課金プラン
@@ -87,10 +87,10 @@ az webapp config set --name my-example-func-py --resource-group $RG_NAME --ftps-
 ```
 az functionapp plan create --resource-group $RG_NAME --name my-func-PremiumPlan --location $LOCATION --number-of-workers 1 --sku EP1 --is-linux
 
-Function作成(--app-insightsなどを指定)
+# Function作成(--app-insightsなどを指定)
 az functionapp create --name my-example-func-py --storage-account funcstorage0001 --resource-group $RG_NAME --plan my-func-PremiumPlan --runtime python --runtime-version 3.9 --functions-version 4 --app-insights my-example-app-insights
 
-Function作成(--app-insightsなどを指定)　コンテナ
+# Function作成(--app-insightsなどを指定)　コンテナ
 az functionapp create --name my-example-func-py-container --storage-account funcstorage0001 --resource-group $RG_NAME --plan my-func-PremiumPlan --functions-version 4 --deployment-container-image-name tokym/my-func-py-image:v1.0.0 --app-insights my-example-app-insights
 ```
 
@@ -136,7 +136,7 @@ func azure functionapp fetch-app-settings my-example-func-py
 az webapp log config --name my-example-func-py --resource-group $RG_NAME --web-server-logging filesystem
 
 # ログの確認
-func azure functionapp logstream my-example-func-py1
+func azure functionapp logstream my-example-func-py
 ```
 
 # 確認
