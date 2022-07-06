@@ -194,8 +194,8 @@ az network private-endpoint dns-zone-group create \
 vmを作成して、プライベートIPアドレスでアクセスできることを確認する
 ```
 az vm create -n my-example-vm -g $RG_NAME --image UbuntuLTS \
-    --admin-username apcuser1 \
-    --admin-password password@123 \
+    --admin-username <USERNAME> \
+    --admin-password <PASSWORD> \
     --vnet-name my-example-vnet --subnet my-subnet-3 \
     --public-ip-sku Standard"
 ```
