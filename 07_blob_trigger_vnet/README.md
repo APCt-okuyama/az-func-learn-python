@@ -5,7 +5,7 @@
 Storageアカウントを作成
 ```
 az storage account create -n mydatastorage01 -g $RG_NAME -l $LOCATION --sku Standard_LRS --kind StorageV2
-az storage account show-connection-string -g $RG_NAME -n mydatastorage01
+az storage account show-connection-string -g $RG_NAME -n mydatastorage01 -o tsv
 ```
 
 コンテナを作成
@@ -18,17 +18,32 @@ az storage container create --account-name mydatastorage01 -n samples-workitems
 ![image](./img/blob-trigger-access.png)
 
 
-## option 1 (アクセス キー)接続文字列
+## (option 1) 接続文字列でアクセス 
 
-アプリ設定または設定コレクションの名前
+アクセス キーを利用した通常の接続方法。アプリ設定にStorageAccountの接続情報を設定する。
 
-## option 2 (ID ベースの接続)
+local.settings.jsonの例
+```
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+これ→"AzureWebJobsStorage": "DefaultEndpointsProtocol=https;EndpointSuffix=xx .... "
+  }
+}
+```
+
+## (option 2) ID ベースの接続
 シークレットを含む接続文字列の代わりとして利用できる
+バージョン 5.x 以上の拡張機能
+https://docs.microsoft.com/ja-jp/azure/azure-functions/functions-identity-based-connections-tutorial-2
 
-## option 3
 
-Functionsの送信IPアドレスを固定する (NATゲートウェイ)
-ネットワークの制限を入れる
+
+ユーザー割り当てマネージド ID
+/subscriptions/d79e0410-8e3c-4207-8d0a-1f7885d35859/resourcegroups/az-func-example-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/my-example-user-namaged-id
+
+システム割り当てID
 
 ---
 
