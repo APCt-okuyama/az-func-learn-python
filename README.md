@@ -4,16 +4,23 @@
 
 https://docs.microsoft.com/ja-jp/azure/azure-functions/create-first-function-cli-python?tabs=azure-cli%2Cbash%2Cbrowser
 
-### オペレーティングシステムにLinuxを選択する必要があります。
+## オペレーティングシステムにLinuxを選択する必要があります。
 
 現時点では Python 関数を Windows で実行することはできないため、Linxu OS の Functions しか利用できない。
 Functions作成時に `--os-type linux` を指定して作成します。
 
 https://docs.microsoft.com/ja-jp/azure/azure-functions/functions-scale
 
+## pythonのバージョン
+
+https://docs.microsoft.com/ja-jp/azure/azure-functions/functions-versions?tabs=azure-cli%2Cin-process%2Cv4&pivots=programming-language-python
+
+Functions ランタイムのバージョン 4.x を利用するので、Python 3.9、3.8、3.7　のどれかを利用する。
+今回は Python 3.9 を利用します。
+
 ## 準備
 
-※可能か限り最新のものを利用する
+※可能な限り最新のものを利用する
 ※pyenv をインストールしておくと便利 (option)
 
 ```
