@@ -121,6 +121,9 @@ func init --python
 # 関数の追加
 func new
 
+# local実行
+func start
+
 # 関数のデプロイ (defaultはremote build)
 func azure functionapp publish my-example-func-py
 func azure functionapp publish my-example-func-py --publish-local-settings -y
