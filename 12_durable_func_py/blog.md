@@ -6,7 +6,7 @@
 
 Azure Functions の Durable Functions (Python) についての調査・検証を行ったので、備忘録を兼ねてブログにしておきます。
 
-プロジェクトで時間のかかる一括処理を行う必要があり、調べた内容です。
+現在、担当しているシステムで時間のかかる一括処理を行う必要があり、調べた内容です。
 様々な方法があるとは思いますが、Azure なら Durable Functions お勧めです！
 
 ## Durable Functions (Azure Functions) とは
@@ -16,8 +16,10 @@ https://techblog.ap-com.co.jp/entry/2022/06/02/170053
 
 # Pythonでの実装について
 
+※実際のソースコードなどは記載しません。
+
 Azure Functions のプログラミングには プログラミング モデル v1 と v2 があります。
-v1 と v2 の最も大きな違いは functions.json を利用するかどうかですかね。 v2 では functions.json がなくなりデコレーターでバインディング等の設定を指定することになり、コード中心になります。今回は v2 で実装を進めます。
+v1 と v2 の最も大きな違いは functions.json を利用するかどうかですかね。 v2 では functions.json がなくなりデコレーターでバインディング等の設定を指定することになり、コード中心になります。今回は v2 で実装を進めました。
 
 ## pythonでの実装 (最低限のはじめかた)
 
@@ -86,9 +88,12 @@ curlで確認
 ```
 curl http://localhost:7071/api/orchestrators/hello_orchestrator
 ```
-# フォルダ構成を変更
+
+# Blueprints (フォルダ構成を変更)
 いくつかの処理を実装していきたのですが、すべて function_app.py に実装していくと管理が大変になってしまうので、ファイルを機能単位に分けます。
 
+
+# 調整
 
 
 # 最後に
