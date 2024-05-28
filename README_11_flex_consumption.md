@@ -32,14 +32,15 @@ func --version
 # @app.route(route="HttpExample", auth_level=func.AuthLevel.Anonymous)
 @app.route(route="HttpExample", auth_level=func.AuthLevel.ANONYMOUS)
 ```
-定義が変わった？？
+定義が変わったな！？
 
 # az cli (azure function)
 az 
 ```
-export RG_NAME=rg-okym-test-2024-05
+export RG_NAME=rg-okym-funcpy-2024-05
 export STORAGE_NAME=st2024okym0001test
-export REGION=eastasia
+export REGION=japaneast
+export FUNC_NAME=func-sample-durable-py
 
 # rg
 az group create --name $RG_NAME --location $REGION
@@ -66,6 +67,65 @@ eastus2euap
 westus3
 swedencentral
 
+# 通常の従量課金 (--consumption-plan-location)
+az functionapp create --resource-group $RG_NAME --consumption-plan-location $REGION --runtime python --runtime-version 3.11 --functions-version 4 --name $FUNC_NAME --os-type linux --storage-account $STORAGE_NAME
+# ※ Flex 従量課金だと durable(python) が Azure にデプロイ後に以下のエラーになるので 通常の従量課金プランで実施
+
 # function (--flexconsumption-location)
-az functionapp create --resource-group $RG_NAME --flexconsumption-location $REGION --runtime python --runtime-version 3.11 --functions-version 4 --name test-flexconsumption-app --os-type linux --storage-account $STORAGE_NAME
+# az functionapp create --resource-group $RG_NAME --flexconsumption-location $REGION --runtime python --runtime-version 3.11 --functions-version 4 --name $FUNC_NAME --os-type linux --storage-account $STORAGE_NAME
 ```
+
+v2 プログラミング モデルを有効
+```
+az functionapp config appsettings set --name $FUNC_NAME --resource-group $RG_NAME --settings AzureWebJobsFeatureFlags=EnableWorkerIndexing
+```
+
+# az function (ここからはプログラミング)
+
+※<プロジェクト フォルダ> を作成しておく
+仮想環境作成
+
+```
+python -m venv .venv
+source .venv/bin/activate
+```
+
+## create project
+
+仮想環境に Python v2 関数プロジェクトを作成
+
+```
+cd <プロジェクト フォルダ>
+func init --python
+```
+
+## create func
+
+```
+func new --name HttpExample --template "HTTP trigger" --authlevel "ANONYMOUS"
+```
+
+## run on local
+
+```
+func start
+```
+
+## deploy
+
+```
+func azure functionapp publish $FUNC_NAME
+```
+
+# プログラミングモデルの v1 と v2
+
+- v2 では トリガーとバインディングを デコレーターで指定する (function.json が不要になった)
+- 関数のエントリーポイントが _init_.py から function_app.py に変更
+
+## すべてのステータスを取得することも可能
+
+```
+# 'functionName' がすでに動いているかどうかを確認する
+    instances = await client.get_status_all()
+```
+
