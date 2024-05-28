@@ -19,11 +19,21 @@ https://techblog.ap-com.co.jp/entry/2022/06/02/170053
 Azure Functions のプログラミングには プログラミング モデル v1 と v2 があります。
 v1 と v2 の最も大きな違いは functions.json を利用するかどうかですかね。 v2 では functions.json がなくなりデコレーターでバインディング等の設定を指定することになり、コード中心になります。今回は v2 で実装を進めます。
 
-## pythonでの実装
+## pythonでの実装 (最低限のはじめかた)
 
-※ cliベースで作業
+Azure Functions の Python 開発者向けガイド
+https://learn.microsoft.com/ja-jp/azure/azure-functions/functions-reference-python?tabs=asgi%2Capplication-level&pivots=python-mode-decorators
 
-- まずはプロジェクトの作成
+※ cliベースで作業しています。
+※ pythonの仮想環境
+
+```
+python -m venv .venv
+source .venv/bin/activate
+# deactivate
+```
+
+## まずはプロジェクトの作成
 
 ```
 mkdir <プロジェクト フォルダ>
@@ -33,11 +43,51 @@ ls
 function_app.py  host.json  local.settings.json  requirements.txt
 ```
 
-- Durable Functionの作成
+## Durable Functionの作成
+
+function_app.py を以下の様に変更します。
+
 ```
+import azure.functions as func
+import azure.durable_functions as df
+
+myApp = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+
+# An HTTP-Triggered Function with a Durable Functions Client binding
+@myApp.route(route="orchestrators/{functionName}")
+@myApp.durable_client_input(client_name="client")
+async def http_start(req: func.HttpRequest, client):
+    function_name = req.route_params.get('functionName')
+    instance_id = await client.start_new(function_name)
+    response = client.create_check_status_response(req, instance_id)
+    return response
+
+# Orchestrator
+@myApp.orchestration_trigger(context_name="context")
+def hello_orchestrator(context):
+    result1 = yield context.call_activity("hello", "Seattle")
+    result2 = yield context.call_activity("hello", "Tokyo")
+    result3 = yield context.call_activity("hello", "London")
+
+    return [result1, result2, result3]
+
+# Activity
+@myApp.activity_trigger(input_name="city")
+def hello(city: str):
+    return f"Hello {city}"
+```
+## ローカルで確認
+
+```
+func start
 ```
 
-## 調整
+curlで確認
+```
+curl http://localhost:7071/api/orchestrators/hello_orchestrator
+```
+# フォルダ構成を変更
+いくつかの処理を実装していきたのですが、すべて function_app.py に実装していくと管理が大変になってしまうので、ファイルを機能単位に分けます。
 
 
 
