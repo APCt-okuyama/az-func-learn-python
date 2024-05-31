@@ -1,6 +1,5 @@
 import logging
 import time
-import uuid
 import azure.functions as func
 import azure.durable_functions as df
 
@@ -12,8 +11,7 @@ bp = df.Blueprint()
 @bp.durable_client_input(client_name="client")
 async def http_start(req: func.HttpRequest, client):
     function_name = req.route_params.get('functionName')
-    instance_id = "o1-" + str(uuid.uuid4())
-    await client.start_new(function_name, instance_id)
+    instance_id = await client.start_new(function_name)
     response = client.create_check_status_response(req, instance_id)
     return response
 

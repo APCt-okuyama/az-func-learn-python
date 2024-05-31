@@ -99,7 +99,7 @@ az acr login --name $ACR_NAME
 docker build --tag $ACR_NAME.azurecr.io/$IMAGE_NAME:v1.0.0 .
 
 # push
-docker push ${ACR_NAME}.azurecr.io/$IMAGE_NAME:v1.0.0
+docker push ${ACR_NAME}.azurecr.io/$IMAGE_NAME:latest
 ```
 ## Container Apps
 
@@ -145,12 +145,19 @@ az containerapp registry set \
 ※コンテナイメージを作りなおしてデプロイする
 ```
 az containerapp update --name $CONTAITER_APP_NAME --resource-group $RG_NAME --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
-az containerapp update --name $CONTAITER_APP_NAME --resource-group $RG_NAME --image $ACR_NAME.azurecr.io/$IMAGE_NAME:v1.0.3
 ```
 
+https://my-1st-container-app.purpleisland-1252aa69.japaneast.azurecontainerapps.io/api/orchestrators/hello_orchestrator2
 
 
+環境変数の設定
+```
+az containerapp update -n $CONTAITER_APP_NAME -g $RG_NAME \
+  --set-env-vars WEBSITE_HOSTNAME=localhost:80 \
+  --set-env-vars AzureWebJobsStorage=<ここはシークレットを利用する>
+```
 
+WEBSITE_HOSTNAME=localhost:80
 
 # az function (ここからはプログラミング)
 
@@ -158,6 +165,7 @@ az containerapp update --name $CONTAITER_APP_NAME --resource-group $RG_NAME --im
 仮想環境作成
 
 ```
+cd <プロジェクト フォルダ>
 python -m venv .venv
 source .venv/bin/activate
 # deactivate
@@ -169,7 +177,7 @@ source .venv/bin/activate
 
 ```
 cd <プロジェクト フォルダ>
-func init --python
+func init --python -model V2
 ```
 
 ## create func
@@ -183,6 +191,18 @@ func new --name HttpExample --template "HTTP trigger" --authlevel "ANONYMOUS"
 ```
 func start
 ```
+
+dockerコンテナの場合
+```
+docker run -p 8080:80 \
+  -e AzureWebJobsFeatureFlags=EnableWorkerIndexing \
+  -e AzureWebJobsStorage=$AzureWebJobsStorage \
+  -e WEBSITE_HOSTNAME=localhost:8080 \
+  -it acr202405funcapp.azurecr.io/durable-function-test:v1
+```
+※ ACA へデプロイする場合は WEBSITE_HOSTNAME=localhost:80
+
+https://blog.shibayan.jp/entry/20220503/1651510570
 
 ## deploy
 
@@ -198,7 +218,7 @@ func azure functionapp publish $FUNC_NAME
 ## すべてのステータスを取得することも可能
 
 ```
-# 'functionName' がすでに動いているかどうかを確認する
+# 'functionName' がすでに動いているかどうかを確認可能
     instances = await client.get_status_all()
 ```
 
