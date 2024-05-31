@@ -34,7 +34,7 @@ func --version
 ```
 定義が変わったな！？
 
-# az cli (azure function)
+# Azure CLI (azure function)
 az 
 ```
 export RG_NAME=rg-okym-funcpy-2024-05
@@ -71,6 +71,10 @@ swedencentral
 az functionapp create --resource-group $RG_NAME --consumption-plan-location $REGION --runtime python --runtime-version 3.11 --functions-version 4 --name $FUNC_NAME --os-type linux --storage-account $STORAGE_NAME
 # ※ Flex 従量課金だと durable(python) が Azure にデプロイ後に以下のエラーになるので 通常の従量課金プランで実施
 
+# [注意] 予期せぬ課金を防ぐための functionAppScaleLimit の設定
+az resource update --resource-type Microsoft.Web/sites -g $RG_NAME -n $FUNC_NAME/config/web --set properties.functionAppScaleLimit=2
+
+
 # function (--flexconsumption-location)
 # az functionapp create --resource-group $RG_NAME --flexconsumption-location $REGION --runtime python --runtime-version 3.11 --functions-version 4 --name $FUNC_NAME --os-type linux --storage-account $STORAGE_NAME
 ```
@@ -79,6 +83,74 @@ v2 プログラミング モデルを有効
 ```
 az functionapp config appsettings set --name $FUNC_NAME --resource-group $RG_NAME --settings AzureWebJobsFeatureFlags=EnableWorkerIndexing
 ```
+# Azure CLI (azure function & Container Apps)
+
+- vnet統合 と 0スケーリング(費用削減) の為、Durable Functions を Container Apps へデプロイする
+- 利用する Docker Image は[こちら](https://mcr.microsoft.com/catalog?search=functions)
+
+
+## ACR
+```
+export ACR_NAME=acr202405funcapp
+export IMAGE_NAME=durable-function-test
+az acr login --name $ACR_NAME
+
+# build
+docker build --tag $ACR_NAME.azurecr.io/$IMAGE_NAME:v1.0.0 .
+
+# push
+docker push ${ACR_NAME}.azurecr.io/$IMAGE_NAME:v1.0.0
+```
+## Container Apps
+
+セットアップ
+```
+az extension add --name containerapp --upgrade
+az provider register --namespace Microsoft.App
+z provider register --namespace Microsoft.OperationalInsights
+```
+
+環境作成
+```
+export CONTAINERAPPS_ENVIRONMENT=aca-okym-2024-01
+az containerapp env create \
+  --name $CONTAINERAPPS_ENVIRONMENT \
+  --resource-group $RG_NAME \
+  --location "$REGION"
+```
+※ --plan default は 「ワークロード プロファイル」
+※ --plan については 「従量課金のみ」と「ワークロード プロファイル」どちらも 0スケーリング可能
+
+
+
+アプリの作成
+※ システム割り当てマネージド ID を利用します。
+
+image mcr.microsoft.com/k8se/quickstart:latest でアプリを作成
+```
+export CONTAITER_APP_NAME=my-1st-container-app
+az containerapp create --name $CONTAITER_APP_NAME --resource-group $RG_NAME --environment $CONTAINERAPPS_ENVIRONMENT --image mcr.microsoft.com/k8se/quickstart:latest --target-port 80 --ingress 'external' --query properties.configuration.ingress.fqdn
+```
+
+システム割り当てマネージド ID の設定
+```
+az containerapp registry set \
+  --name $CONTAITER_APP_NAME \
+  --resource-group $RG_NAME \
+  --identity system \
+  --server "${ACR_NAME}.azurecr.io"
+```
+
+コンテナ アプリを更新
+※コンテナイメージを作りなおしてデプロイする
+```
+az containerapp update --name $CONTAITER_APP_NAME --resource-group $RG_NAME --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+az containerapp update --name $CONTAITER_APP_NAME --resource-group $RG_NAME --image $ACR_NAME.azurecr.io/$IMAGE_NAME:v1.0.3
+```
+
+
+
+
 
 # az function (ここからはプログラミング)
 
@@ -88,6 +160,7 @@ az functionapp config appsettings set --name $FUNC_NAME --resource-group $RG_NAM
 ```
 python -m venv .venv
 source .venv/bin/activate
+# deactivate
 ```
 
 ## create project

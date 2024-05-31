@@ -6,95 +6,118 @@
 
 Azure Functions の Durable Functions (Python) についての調査・検証を行ったので、備忘録を兼ねてブログにしておきます。
 
-現在、担当しているシステムで時間のかかる一括処理を行う必要があり、調べた内容です。
-様々な方法があるとは思いますが、Azure なら Durable Functions お勧めです！
+現在、担当しているシステムで時間のかかる処理を行う必要があり、調べた内容です。
+様々な実現方法があるとは思いますが、Azure なら Durable Functions お勧めです！
 
 ## Durable Functions (Azure Functions) とは
 
-以前にブログを書いたブログを紹介
-https://techblog.ap-com.co.jp/entry/2022/06/02/170053
+以前に Durable Functions について[ブログ](https://techblog.ap-com.co.jp/entry/2022/06/02/170053)を書いたブログを紹介
+
 
 # Pythonでの実装について
 
-※実際のソースコードなどは記載しません。
+※このブログでは実際のソースコードなどは記載しません。
 
-Azure Functions のプログラミングには プログラミング モデル v1 と v2 があります。
-v1 と v2 の最も大きな違いは functions.json を利用するかどうかですかね。 v2 では functions.json がなくなりデコレーターでバインディング等の設定を指定することになり、コード中心になります。今回は v2 で実装を進めました。
+Azure Functions Pythonでのプログラミングには プログラミング モデル v1 と v2 があります。
+v1 と v2 の最も大きな違いは functions.json を利用するかどうかですかね。 v2 では functions.json がなくなりデコレーターでバインディング等の設定を指定することになり、コード中心になります。
+※ 今回は v2 で実装を進めています。
 
 ## pythonでの実装 (最低限のはじめかた)
 
-Azure Functions の Python 開発者向けガイド
-https://learn.microsoft.com/ja-jp/azure/azure-functions/functions-reference-python?tabs=asgi%2Capplication-level&pivots=python-mode-decorators
+[Azure Functions の Python 開発者向けガイド](https://learn.microsoft.com/ja-jp/azure/azure-functions/functions-reference-python?tabs=asgi%2Capplication-level&pivots=python-mode-decorators)
 
-※ cliベースで作業しています。
-※ pythonの仮想環境
 
-```
-python -m venv .venv
-source .venv/bin/activate
-# deactivate
-```
 
-## まずはプロジェクトの作成
+## Blueprints (フォルダ構成を変更)
+
+フォルダ構成を推奨フォルダー構造を参考に、ブループリントを利用して少し機能単位にフォルダを分けました。
 
 ```
-mkdir <プロジェクト フォルダ>
-cd <プロジェクト フォルダ>
-func init --python
-ls 
-function_app.py  host.json  local.settings.json  requirements.txt
+$ tree 
+.
+├── __pycache__
+│   ├── func1_blueprint.cpython-310.pyc
+│   └── function_app.cpython-310.pyc
+├── blog.md
+├── func01 ※一つ目の機能
+│   ├── __pycache__
+│   │   └── func1_blueprint.cpython-310.pyc
+│   └── func1_blueprint.py
+├── func02 ※二つ目の機能
+│   ├── __pycache__
+│   │   └── func2_blueprint.cpython-310.pyc
+│   └── func2_blueprint.py
+├── function_app.py
+├── host.json
+├── local.settings.json
+└── requirements.txt
 ```
 
-## Durable Functionの作成
 
-function_app.py を以下の様に変更します。
+# アプリケーション パターン #3: 非同期 HTTP API
 
+時間のかかる処理に有効なのが [アプリケーション パターン #3: 非同期 HTTP API](https://learn.microsoft.com/ja-jp/azure/azure-functions/durable/durable-functions-overview?tabs=in-process%2Cnodejs-v3%2Cv2-model&pivots=python#async-http) です。
+
+![img](./blog_img/blog_img_01.png)
+
+
+実装自体は 通常の durable functions と同様です。
+何もしなくてもオーケストレーター関数の状態をクエリするWebhook HTTP APIが組み込み処理が利用できます。※赤枠のところ
+
+
+## 状態をクエリするWebhook HTTP API
+
+※ [インスタンスの管理](https://learn.microsoft.com/ja-jp/azure/azure-functions/durable/durable-functions-instance-management?tabs=python) を参照
+
+Webhook HTTP API の URL はHTTP-Triggered関数の場合、RESTのResponseに含まれています。
 ```
-import azure.functions as func
-import azure.durable_functions as df
-
-myApp = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
-
-# An HTTP-Triggered Function with a Durable Functions Client binding
-@myApp.route(route="orchestrators/{functionName}")
-@myApp.durable_client_input(client_name="client")
-async def http_start(req: func.HttpRequest, client):
-    function_name = req.route_params.get('functionName')
-    instance_id = await client.start_new(function_name)
-    response = client.create_check_status_response(req, instance_id)
-    return response
-
-# Orchestrator
-@myApp.orchestration_trigger(context_name="context")
-def hello_orchestrator(context):
-    result1 = yield context.call_activity("hello", "Seattle")
-    result2 = yield context.call_activity("hello", "Tokyo")
-    result3 = yield context.call_activity("hello", "London")
-
-    return [result1, result2, result3]
-
-# Activity
-@myApp.activity_trigger(input_name="city")
-def hello(city: str):
-    return f"Hello {city}"
-```
-## ローカルで確認
-
-```
-func start
+response = client.create_check_status_response(req, instance_id)
 ```
 
-curlで確認
+レスポンスを確認すると以下のように URL が確認できます。
+```bash
+$ curl -sS http://localhost:7071/api/orchestrators/hello_orchestrator   | jq . 
+{
+  "id": "59258d16b93544338469fd8d954b5e9d",
+  "statusQueryGetUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/<id>",
+  "sendEventPostUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/<id>/raiseEvent/{eventName}",
+  "terminatePostUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/<id>/terminate",
+  "rewindPostUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/<id>/rewind",
+  "purgeHistoryDeleteUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/<id>",
+  "restartPostUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/<id>/restart",
+  "suspendPostUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/<id>/suspend",
+  "resumePostUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/<id>/resume"
+}
 ```
-curl http://localhost:7071/api/orchestrators/hello_orchestrator
-```
 
-# Blueprints (フォルダ構成を変更)
-いくつかの処理を実装していきたのですが、すべて function_app.py に実装していくと管理が大変になってしまうので、ファイルを機能単位に分けます。
+## Runtime Status
 
+Client はポーリングによって操作が完了したことを認識することができます。
+ClientはAPIを通してオーケストレーションの状態をしることができます。
 
-# 調整
+|RuntimeStatus|意味|
+| --- | --- |
+| Pending | スケジュール済み |
+| Running | 実行中 |
+| Completed | 完了　|
+| ContinuedAsNew | インスタンスが新しい履歴で自身を再開しました。 これは一時的な状態です。 |
+| Failed | 失敗 |
+| Terminated | 停止 |
+| Suspended | 再開(resume)待ち |
 
+# スケーリングとパフォーマンス
+
+[Azure Functions で Python アプリのスループット パフォーマンスを向上させる](https://learn.microsoft.com/ja-jp/azure/azure-functions/python-scale-performance-reference) に書かれている以下の２つのパラメータを調整して性能をコントロールできます。
+
+[アプリケーション設定](https://learn.microsoft.com/ja-jp/azure/azure-functions/functions-app-settings)
+
+| 設定名 | 備考 |
+| --- | --- |
+| FUNCTIONS_WORKER_PROCESS_COUNT | 既定値は 1 です。 許容される最大値は 10 |
+| PYTHON_THREADPOOL_THREAD_COUNT | スレッド数（初期値はNone）|
+
+## 性能確認用の処理
+次のような処理を実行して処理時間を計測してみました。
 
 # 最後に
 

@@ -1,4 +1,5 @@
 import logging
+import time
 import azure.functions as func
 import azure.durable_functions as df
 
@@ -28,4 +29,7 @@ def hello_orchestrator(context):
 # Activity
 @bp.activity_trigger(input_name="city")
 def hello(city: str):
+    logging.info(f"Saying hello to {city} start")
+    time.sleep(60)
+    logging.info(f"Saying hello to {city} end")
     return f"Hello {city}"
