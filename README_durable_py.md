@@ -37,8 +37,8 @@ func --version
 # Azure CLI (azure function)
 az 
 ```
-export RG_NAME=rg-okym-funcpy-2024-05
-export STORAGE_NAME=st2024okym0001test
+export RG_NAME=rg-okym-funcpy-202406
+export STORAGE_NAME=st202406okym0001test
 export REGION=japaneast
 export FUNC_NAME=func-sample-durable-py
 
@@ -68,7 +68,7 @@ westus3
 swedencentral
 
 # 通常の従量課金 (--consumption-plan-location)
-az functionapp create --resource-group $RG_NAME --consumption-plan-location $REGION --runtime python --runtime-version 3.11 --functions-version 4 --name $FUNC_NAME --os-type linux --storage-account $STORAGE_NAME
+az functionapp create --resource-group $RG_NAME --consumption-plan-location $REGION --runtime python --runtime-version 3.10 --functions-version 4 --name $FUNC_NAME --os-type linux --storage-account $STORAGE_NAME
 # ※ Flex 従量課金だと durable(python) が Azure にデプロイ後に以下のエラーになるので 通常の従量課金プランで実施
 
 # [注意] 予期せぬ課金を防ぐための functionAppScaleLimit の設定
@@ -76,13 +76,29 @@ az resource update --resource-type Microsoft.Web/sites -g $RG_NAME -n $FUNC_NAME
 
 
 # function (--flexconsumption-location)
-# az functionapp create --resource-group $RG_NAME --flexconsumption-location $REGION --runtime python --runtime-version 3.11 --functions-version 4 --name $FUNC_NAME --os-type linux --storage-account $STORAGE_NAME
+# az functionapp create --resource-group $RG_NAME --flexconsumption-location $REGION --runtime python --runtime-version 3.10 --functions-version 4 --name $FUNC_NAME --os-type linux --storage-account $STORAGE_NAME
 ```
 
 v2 プログラミング モデルを有効
 ```
 az functionapp config appsettings set --name $FUNC_NAME --resource-group $RG_NAME --settings AzureWebJobsFeatureFlags=EnableWorkerIndexing
 ```
+
+
+
+
+## Functionsのデプロイ
+```
+func azure functionapp publish $FUNC_NAME
+func azure functionapp publish $FUNC_NAME --publish-local-settings -y
+```
+
+
+
+
+
+
+これより下はACAを利用する場合
 # Azure CLI (azure function & Container Apps)
 
 - vnet統合 と 0スケーリング(費用削減) の為、Durable Functions を Container Apps へデプロイする
@@ -91,8 +107,24 @@ az functionapp config appsettings set --name $FUNC_NAME --resource-group $RG_NAM
 
 ## ACR
 ```
-export ACR_NAME=acr202405funcapp
+export ACR_NAME=acr202406funcapp
 export IMAGE_NAME=durable-function-test
+```
+
+ACR セットアップ
+```
+az extension add --name containerapp --upgrade
+az provider register --namespace Microsoft.App
+az provider register --namespace Microsoft.OperationalInsights
+```
+
+ACR 作成
+```
+az acr create --resource-group $RG_NAME --name $ACR_NAME --sku Basic
+```
+
+
+```
 az acr login --name $ACR_NAME
 
 # build
@@ -103,12 +135,7 @@ docker push ${ACR_NAME}.azurecr.io/$IMAGE_NAME:latest
 ```
 ## Container Apps
 
-セットアップ
-```
-az extension add --name containerapp --upgrade
-az provider register --namespace Microsoft.App
-z provider register --namespace Microsoft.OperationalInsights
-```
+
 
 環境作成
 ```

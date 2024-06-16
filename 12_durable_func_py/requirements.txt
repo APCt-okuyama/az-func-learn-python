@@ -4,4 +4,4 @@
 
 azure-functions
 azure-functions-durable
-numpy==1.21.2
+numpy
