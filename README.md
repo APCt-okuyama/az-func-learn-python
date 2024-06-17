@@ -130,6 +130,7 @@ func new
 
 # local実行
 func start
+func start > outfile.log 2>&1
 
 # 関数のデプロイ (defaultはremote build)
 func azure functionapp publish my-example-func-py

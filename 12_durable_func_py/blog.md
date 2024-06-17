@@ -1,4 +1,4 @@
-# Github Copilot Lab
+# Azure Functions ([Python]Durable Function)
 
 # はじめに
 
@@ -105,7 +105,25 @@ ClientはAPIを通してオーケストレーションの状態をしること�
 | Terminated | 停止 |
 | Suspended | 再開(resume)待ち |
 
-# スケーリングとパフォーマンス
+# スケーリングとパフォーマンスの調整
+
+## インスタンス数
+vmの数 ※
+
+## 環境変数（local.settings.json）
+FUNCTIONS_WORKER_PROCESS_COUNT　processの数 (default:1)
+PYTHON_THREADPOOL_THREAD_COUNT threadの数 (default:None) 
+　※実行中に設定されるスレッドの数を保証しない
+
+## host.json
+maxConcurrentActivityFunctions (default:10) 
+maxConcurrentOrchestratorFunctions (default:100)
+
+※Consumption planとNON-Consumption planでデフォルト値が違う
+```
+    int maxConcurrentOrchestratorsDefault = this.inConsumption ? 5 : 10 * Environment.ProcessorCount;
+    int maxConcurrentActivitiesDefault = this.inConsumption ? 10 : 10 * Environment.ProcessorCount;
+```
 
 [Azure Functions で Python アプリのスループット パフォーマンスを向上させる](https://learn.microsoft.com/ja-jp/azure/azure-functions/python-scale-performance-reference) に書かれている以下の２つのパラメータを調整して性能をコントロールできます。
 
@@ -133,3 +151,68 @@ ClientはAPIを通してオーケストレーションの状態をしること�
 <fieldset style="border:4px solid #95ccff; padding:10px">
 本記事の投稿者: [奥山 拓弥](https://techblog.ap-com.co.jp/archive/author/mountain1415)  
 </fieldset>
+
+
+
+
+
+
+
+host.json
+```
+"extensions": {
+    "durableTask": {
+      "maxConcurrentActivityFunctions": 2,
+      "maxConcurrentOrchestratorFunctions": 2
+    }
+```
+
+FUNCTIONS_WORKER_PROCESS_COUNT 
+PYTHON_THREADPOOL_THREAD_COUNT 
+
+
+
+
+[2024-06-17T08:52:16.672Z] F2 input: 79 start, hostname: IT-PC-2402-1092, pID: 3656399 thID: 140361662715456
+[2024-06-17T08:52:16.672Z] F2 input: 119 start, hostname: IT-PC-2402-1092, pID: 3656450 thID: 140220934641216
+[2024-06-17T08:52:16.690Z] F2 input: 139 start, hostname: IT-PC-2402-1092, pID: 3656399 thID: 140361654322752
+[2024-06-17T08:52:16.713Z] F2 input: 109 start, hostname: IT-PC-2402-1092, pID: 3656450 thID: 140219986708032
+[2024-06-17T08:52:16.730Z] F2 input: 129 start, hostname: IT-PC-2402-1092, pID: 3656399 thID: 140361645930048
+[2024-06-17T08:52:16.749Z] F2 input: 99 start, hostname: IT-PC-2402-1092, pID: 3656450 thID: 140219978315328
+[2024-06-17T08:52:16.773Z] F2 input: 169 start, hostname: IT-PC-2402-1092, pID: 3656399 thID: 140361637537344
+[2024-06-17T08:52:16.794Z] F2 input: 159 start, hostname: IT-PC-2402-1092, pID: 3656450 thID: 140219969922624
+[2024-06-17T08:52:16.821Z] F2 input: 179 start, hostname: IT-PC-2402-1092, pID: 3656399 thID: 140361629144640
+[2024-06-17T08:52:16.843Z] F2 input: 149 start, hostname: IT-PC-2402-1092, pID: 3656450 thID: 140219961529920
+
+
+
+
+
+04Z] Executed 'Functions.hello_orchestrator2' (Succeeded, Id=4992f719-5892-4b2e-84bd-2a24abdd7fcc, Duration=11ms)
+[2024-06-17T08:55:03.111Z] F2 input: 146 start, hostname: IT-PC-2402-1092, pID: 3657847 thID: 140199384286784
+[2024-06-17T08:55:03.138Z] F2 input: 161 start, hostname: IT-PC-2402-1092, pID: 3657887 thID: 140043532310080
+[2024-06-17T08:55:03.160Z] F2 input: 151 start, hostname: IT-PC-2402-1092, pID: 3658035 thID: 140386710320704
+[2024-06-17T08:55:03.180Z] F2 input: 156 start, hostname: IT-PC-2402-1092, pID: 3657847 thID: 140199375894080
+[2024-06-17T08:55:03.203Z] F2 input: 171 start, hostname: IT-PC-2402-1092, pID: 3658176 thID: 140253222364736
+[2024-06-17T08:55:03.227Z] F2 input: 176 start, hostname: IT-PC-2402-1092, pID: 3657887 thID: 140043549095488
+[2024-06-17T08:55:03.248Z] F2 input: 186 start, hostname: IT-PC-2402-1092, pID: 3658035 thID: 140385976272448
+[2024-06-17T08:55:03.273Z] F2 input: 181 start, hostname: IT-PC-2402-1092, pID: 3658176 thID: 140253213972032
+[2024-06-17T08:55:03.291Z] F2 input: 191 start, hostname: IT-PC-2402-1092, pID: 3657887 thID: 140043557488192
+[2024-06-17T08:55:03.310Z] F2 input: 196 start, hostname: IT-PC-2402-1092, pID: 3658035 thID: 140385951094336
+[2024-06-17T08:55:04.113Z] F2 input: 147 start, hostname: IT-PC-2402-1092, pID: 3657847 thID: 140199384286784
+[2024-06-17T08:55:04.140Z] F2 input: 162 start, hostname: IT-PC-2402-1092, pID: 3657887 thID: 140043532310080
+[2024-06-17T08:55:04.161Z] F2 input: 152 start, hostname: IT-PC-2402-1092, pID: 3658035 thID: 140386710320704
+[2024-06-17T08:55:04.183Z] F2 input: 157 start, hostname: IT-PC-2402-1092, pID: 3657847 thID: 140199375894080
+[2024-06-17T08:55:04.204Z] F2 input: 172 start, hostname: IT-PC-2402-1092, pID: 3658176 thID: 140253222364736
+[2024-06-17T08:55:04.228Z] F2 input: 177 start, hostname: IT-PC-2402-1092, pID: 3657887 thID: 140043549095488
+[2024-06-17T08:55:04.250Z] F2 input: 187 start, hostname: IT-PC-2402-1092, pID: 3658035 thID: 140385976272448
+[2024-06-17T08:55:04.275Z] F2 input: 182 start, hostname: IT-PC-2402-1092, pID: 3658176 thID: 140253213972032
+[2024-06-17T08:55:04.293Z] F2 input: 192 start, hostname: IT-PC-2402-1092, pID: 3657887 thID: 140043557488192
+[2024-06-17T08:55:04.311Z] F2 input: 197 start, hostname: IT-PC-2402-1092, pID: 3658035 thID: 140385951094336
+[2024-06-17T08:55:05.114Z] F2 input: 148 start, hostname: IT-PC-2402-1092, pID: 3657847 thID: 140199384286784
+[2024-06-17T08:55:05.141Z] F2 input: 163 start, hostname: IT-PC-2402-1092, pID: 3657887 thID: 140043532310080
+[2024-06-17T08:55:05.162Z] F2 input: 153 start, hostname: IT-PC-2402-1092, pID: 3658035 thID: 140386710320704
+[2024-06-17T08:55:05.184Z] F2 input: 158 start, hostname: IT-PC-2402-1092, pID: 3657847 thID: 140199375894080
+[2024-06-17T08:55:05.205Z] F2 input: 173 start, hostname: IT-PC-2402-1092, pID: 3658176 thID: 140253222364736
+[2024-06-17T08:55:05.229Z] F2 input: 178 start, hostname: IT-PC-2402-1092, pID: 3657887 thID: 140043549095
+

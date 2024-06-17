@@ -93,6 +93,9 @@ func azure functionapp publish $FUNC_NAME
 func azure functionapp publish $FUNC_NAME --publish-local-settings -y
 ```
 
+```
+func azure functionapp logstream $FUNC_NAME
+```
 
 
 
@@ -217,6 +220,8 @@ func new --name HttpExample --template "HTTP trigger" --authlevel "ANONYMOUS"
 
 ```
 func start
+# logをファイルに出力する場合
+func start > outfile.log 2>&1
 ```
 
 dockerコンテナの場合

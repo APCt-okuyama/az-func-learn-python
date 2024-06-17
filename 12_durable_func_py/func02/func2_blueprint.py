@@ -13,7 +13,8 @@ bp = df.Blueprint()
 def log_thread_info(function_name, dummy=None):
     hostname = socket.gethostname()
     thread_id = threading.get_ident()
-    logging.info(f"{function_name} start, hostname: {hostname}, thread ID: {thread_id}")
+    process_id = os.getpid()
+    logging.info(f"{function_name} start, hostname: {hostname}, pID: {process_id} tID: {thread_id}")
 
 
 # An HTTP-Triggered Function with a Durable Functions Client binding
@@ -41,7 +42,7 @@ def hello_orchestrator2(context):
     # F2
     parallel_tasks = []
     # 分割してActivityを呼び出す
-    split_work_batches = np.array_split(all_work_batch, len(all_work_batch) // 10)
+    split_work_batches = np.array_split(all_work_batch, len(all_work_batch) // 2)
     for works in split_work_batches:
         parallel_tasks.append(context.call_activity("F2", works.tolist()))
     # logging.info(f"parallel_tasks: {parallel_tasks}")
