@@ -57,6 +57,12 @@ az group create -n $RG_NAME -l $LOCATION
 az group delete --name $RG_NAME -y
 ```
 
+```
+# タグを適用
+tags="owner=t_okuyama"
+az group update --name $RG_NAME --tags $tags
+```
+
 app-insights
 ```
 # workspaceの作成

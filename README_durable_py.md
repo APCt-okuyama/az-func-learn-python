@@ -46,6 +46,12 @@ export FUNC_NAME=func-sample-durable-py
 az group create --name $RG_NAME --location $REGION
 # az group delete -n $RG_NAME
 
+
+# タグを適用
+tags="owner=<t_okuyama>"
+az group update --name $RG_NAME --tags $tags
+
+
 # storage (--allow-blob-public-access false)
 az storage account create --name $STORAGE_NAME --location $REGION --resource-group $RG_NAME --sku Standard_LRS
 

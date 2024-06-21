@@ -167,11 +167,14 @@ host.json
     }
 ```
 
+evn
+```
 FUNCTIONS_WORKER_PROCESS_COUNT 
 PYTHON_THREADPOOL_THREAD_COUNT 
+```
 
-
-
+mysql
+engine.pyの処理で利用しているライブラリ
 
 [2024-06-17T08:52:16.672Z] F2 input: 79 start, hostname: IT-PC-2402-1092, pID: 3656399 thID: 140361662715456
 [2024-06-17T08:52:16.672Z] F2 input: 119 start, hostname: IT-PC-2402-1092, pID: 3656450 thID: 140220934641216
