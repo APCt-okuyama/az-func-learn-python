@@ -1,4 +1,4 @@
-# Azure Functions ([Python]Durable Function)
+# Durable Function (Python)
 
 # はじめに
 
@@ -25,7 +25,7 @@ v1 と v2 の最も大きな違いは functions.json を利用するかどうか
 
 ## (1) Blueprints (フォルダ構成を変更)
 
-フォルダ構成を推奨フォルダー構造を参考に、ブループリントを利用して少し機能単位にフォルダを分けました。
+[推奨フォルダー構造](https://learn.microsoft.com/ja-jp/azure/azure-functions/functions-reference-python?tabs=asgi%2Capplication-level&pivots=python-mode-decorators#folder-structure)を参考に、ブループリントを利用して少し機能単位にフォルダを分けました。
 
 ```
 $ tree 
@@ -50,7 +50,7 @@ $ tree
 
 ## (2) シングルトン オーケストレーター
 
-[こちら](https://learn.microsoft.com/ja-jp/azure/azure-functions/durable/durable-functions-singletons?tabs=python)で紹介されている特定のオーケストレーターを1度に一つだけ実行されるように保障するパターン。
+[こちら](https://learn.microsoft.com/ja-jp/azure/azure-functions/durable/durable-functions-singletons?tabs=python)で紹介されている特定のオーケストレーターを1度に一つだけ実行されるように保証するパターン。
 オーケストレーターのID（インスタンスID）を固定しておいて実行中かどうかを確認します。実装はシンプルでわかりやすいですね。
 
 ```python
@@ -84,7 +84,7 @@ async def http_start2(req: func.HttpRequest, client):
 
 
 実装自体は 通常の durable functions と同様です。
-何もしなくてもオーケストレーター関数の状態をクエリするWebhook HTTP APIが組み込み処理が利用できます。※赤枠のところ
+何もしなくてもオーケストレーター関数の状態をクエリするWebhook HTTP API(組み込み処理)が利用できます。※赤枠のところ
 
 
 ### 状態をクエリする 組み込みの Webhook HTTP API
@@ -115,7 +115,7 @@ $ curl -sS http://localhost:7071/api/orchestrators/hello_orchestrator   | jq .
 ### Runtime Status
 
 Client はポーリングによって操作が完了したことを認識することができます。
-ClientはAPIを通してオーケストレーションの状態をしることができます。
+ClientはAPIを通してオーケストレーションの状態を知ることができます。
 
 |RuntimeStatus|意味|
 | --- | --- |
@@ -138,8 +138,8 @@ ClientはAPIを通してオーケストレーションの状態をしること�
 | インスタンス数 | vmの数 | ※スケールアウト |
 | プロセス数 | FUNCTIONS_WORKER_PROCESS_COUNT (default: 1) | 環境変数 |
 | スレッド数 | PYTHON_THREADPOOL_THREAD_COUNT (default: None ※実行中に設定されるスレッドの数を保証しない) | 環境変数 |
-| 並列処理の数(Activity) | maxConcurrentActivityFunctions | host.json (extensions.durableTask) ※1つのワーカーが処理する数を設定|
-| 並列処理の数(Orchestrator) | maxConcurrentOrchestratorFunctions | host.json (extensions.durableTask) ※1つのワーカーが処理する数を設定|
+| 並列数(Activity) | maxConcurrentActivityFunctions | host.json (extensions.durableTask) ※1つのワーカーが処理する数を設定|
+| 並列数(Orchestrator) | maxConcurrentOrchestratorFunctions | host.json (extensions.durableTask) ※1つのワーカーが処理する数を設定|
 
 ※上記パラメータを実際に動作させながら調整していくことになります。
 
@@ -167,16 +167,15 @@ Activityで1秒のSleep処理を実施し並列数を上げることで全体の
 ※処理時間の確認は Azure Storage の table で確認しています。
 ![img](./blog_img/blog_img_03.png)
 
-パラメータの変更で並列に処理されて全体の処理時間が短くなっていることを確認できました。
+パラメータの変更で並列に処理されて全体の処理時間が短くなっていることを確認できましたので今回はこれでOKとします。
 
 # まとめ
 
-簡単ですが、今回は Azure Functions (Durable Functions) の   
+今回は Azure Functions (Durable Functions) の   
 ・Pythonでの実装  
 ・非同期 HTTP API  
 ・スケーリングとパフォーマンスの調整  
-の紹介でした。
-
+について検証を行いました。「非同期 HTTP API 」、「スケーリングとパフォーマンスの調整」については仕組みとして用意されているので是非活用していきたいですね。
 
 # 最後に
 
