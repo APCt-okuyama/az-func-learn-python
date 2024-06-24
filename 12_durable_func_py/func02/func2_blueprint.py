@@ -21,11 +21,21 @@ def log_thread_info(function_name, dummy=None):
 @bp.route(route="orchestrators2/{functionName}")
 @bp.durable_client_input(client_name="client")
 async def http_start2(req: func.HttpRequest, client):
-    function_name = req.route_params.get('functionName')
-    taskCount = int(req.params.get('taskCount', '100'))
-    log_thread_info(f"http_start2: taskCount {taskCount}")
-    instance_id = await client.start_new(function_name, None, taskCount)
-    response = client.create_check_status_response(req, instance_id)
+
+    # シングルトンで動かす
+    instance_id = req.params.get('myId', 'my-id-2024001')
+    log_thread_info(f"http_start2: instance_id {instance_id}")
+    existing_instance = await client.get_status(instance_id)
+    if existing_instance.runtime_status in [df.OrchestrationRuntimeStatus.Completed, df.OrchestrationRuntimeStatus.Failed, df.OrchestrationRuntimeStatus.Terminated, None]:
+        taskCount = int(req.params.get('taskCount', '100'))
+        function_name = req.route_params.get('functionName')
+
+        log_thread_info(f"http_start2: taskCount {taskCount}")
+        instance_id = await client.start_new(function_name, instance_id, taskCount)
+        response = client.create_check_status_response(req, instance_id)
+    else:
+        # すでに実行中の場合は、そのまま返す
+        response = client.create_check_status_response(req, instance_id)
     return response
 
 

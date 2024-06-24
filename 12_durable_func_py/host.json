@@ -14,8 +14,8 @@
   },
   "extensions": {
     "durableTask": {
-      "maxConcurrentActivityFunctions": 10,
-      "maxConcurrentOrchestratorFunctions": 10
+      "maxConcurrentActivityFunctions": 2,
+      "maxConcurrentOrchestratorFunctions": 2
     }
   }
 }

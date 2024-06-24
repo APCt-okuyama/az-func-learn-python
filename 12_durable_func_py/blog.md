@@ -7,28 +7,23 @@
 Azure Functions の Durable Functions (Python) についての調査・検証を行ったので、備忘録を兼ねてブログにしておきます。
 
 現在、担当しているシステムで時間のかかる処理を行う必要があり、調べた内容です。
-様々な実現方法があるとは思いますが、Azure なら Durable Functions お勧めです！
+様々な実現方法があるとは思いますが、Azure なら Durable Functions お勧めです。
 
 ## Durable Functions (Azure Functions) とは
 
-以前に Durable Functions について[ブログ](https://techblog.ap-com.co.jp/entry/2022/06/02/170053)を書いたブログを紹介
+Microsoftが開発した Durable Taskフレームワーク を基に構築された Azure Functionsの拡張機能になります。ステートフルな処理 や 長期実行プロセス を簡単に作成できます。 Microsoft内でも様々なところで利用されています。
 
+(参考) 以前に書いたブログ[Azure Durable Functionsを使ってみた](https://techblog.ap-com.co.jp/entry/2022/06/02/170053)
 
 # Pythonでの実装について
 
-※このブログでは実際のソースコードなどは記載しません。
-
 Azure Functions Pythonでのプログラミングには プログラミング モデル v1 と v2 があります。
 v1 と v2 の最も大きな違いは functions.json を利用するかどうかですかね。 v2 では functions.json がなくなりデコレーターでバインディング等の設定を指定することになり、コード中心になります。
-※ 今回は v2 で実装を進めています。
 
-## pythonでの実装 (最低限のはじめかた)
-
-[Azure Functions の Python 開発者向けガイド](https://learn.microsoft.com/ja-jp/azure/azure-functions/functions-reference-python?tabs=asgi%2Capplication-level&pivots=python-mode-decorators)
+※ 今回は v2 で検証を進めました、実際によく利用しそうなものを以下に紹介します。
 
 
-
-## Blueprints (フォルダ構成を変更)
+## (1) Blueprints (フォルダ構成を変更)
 
 フォルダ構成を推奨フォルダー構造を参考に、ブループリントを利用して少し機能単位にフォルダを分けました。
 
@@ -53,8 +48,35 @@ $ tree
 └── requirements.txt
 ```
 
+## (2) シングルトン オーケストレーター
 
-# アプリケーション パターン #3: 非同期 HTTP API
+[こちら](https://learn.microsoft.com/ja-jp/azure/azure-functions/durable/durable-functions-singletons?tabs=python)で紹介されている特定のオーケストレーターを1度に一つだけ実行されるように保障するパターン。
+オーケストレーターのID（インスタンスID）を固定しておいて実行中かどうかを確認します。実装はシンプルでわかりやすいですね。
+
+```python
+# An HTTP-Triggered Function with a Durable Functions Client binding
+@bp.route(route="orchestrators2/{functionName}")
+@bp.durable_client_input(client_name="client")
+async def http_start2(req: func.HttpRequest, client):
+
+    # シングルトン オーケストレーター
+    instance_id = req.params.get('myId', 'my-id-2024001')
+    log_thread_info(f"http_start2: instance_id {instance_id}")
+    existing_instance = await client.get_status(instance_id)
+    if existing_instance.runtime_status in [df.OrchestrationRuntimeStatus.Completed, df.OrchestrationRuntimeStatus.Failed, df.OrchestrationRuntimeStatus.Terminated, None]:
+        taskCount = int(req.params.get('taskCount', '100'))
+        function_name = req.route_params.get('functionName')
+
+        log_thread_info(f"http_start2: taskCount {taskCount}")
+        instance_id = await client.start_new(function_name, instance_id, taskCount)
+        response = client.create_check_status_response(req, instance_id)
+    else:
+        # すでに実行中の場合は、そのまま返す
+        response = client.create_check_status_response(req, instance_id)
+    return response
+```
+
+## (3) アプリケーション パターン #3: 非同期 HTTP API
 
 時間のかかる処理に有効なのが [アプリケーション パターン #3: 非同期 HTTP API](https://learn.microsoft.com/ja-jp/azure/azure-functions/durable/durable-functions-overview?tabs=in-process%2Cnodejs-v3%2Cv2-model&pivots=python#async-http) です。
 
@@ -65,7 +87,7 @@ $ tree
 何もしなくてもオーケストレーター関数の状態をクエリするWebhook HTTP APIが組み込み処理が利用できます。※赤枠のところ
 
 
-## 状態をクエリするWebhook HTTP API
+### 状態をクエリする 組み込みの Webhook HTTP API
 
 ※ [インスタンスの管理](https://learn.microsoft.com/ja-jp/azure/azure-functions/durable/durable-functions-instance-management?tabs=python) を参照
 
@@ -90,7 +112,7 @@ $ curl -sS http://localhost:7071/api/orchestrators/hello_orchestrator   | jq .
 }
 ```
 
-## Runtime Status
+### Runtime Status
 
 Client はポーリングによって操作が完了したことを認識することができます。
 ClientはAPIを通してオーケストレーションの状態をしることができます。
@@ -105,37 +127,56 @@ ClientはAPIを通してオーケストレーションの状態をしること�
 | Terminated | 停止 |
 | Suspended | 再開(resume)待ち |
 
-# スケーリングとパフォーマンスの調整
+## (4) スケーリングとパフォーマンスの調整
 
-## インスタンス数
-vmの数 ※
+プログラミング言語の特性や実際の処理の特性に応じて以下のパラメータを調整します。
 
-## 環境変数（local.settings.json）
-FUNCTIONS_WORKER_PROCESS_COUNT　processの数 (default:1)
-PYTHON_THREADPOOL_THREAD_COUNT threadの数 (default:None) 
-　※実行中に設定されるスレッドの数を保証しない
+![img](./blog_img/blog_img_02.png)
 
-## host.json
-maxConcurrentActivityFunctions (default:10) 
-maxConcurrentOrchestratorFunctions (default:100)
+| パラメータ | 説明 | 備考(変更方法) |
+|--- | --- | --- |
+| インスタンス数 | vmの数 | ※スケールアウト |
+| プロセス数 | FUNCTIONS_WORKER_PROCESS_COUNT (default: 1) | 環境変数 |
+| スレッド数 | PYTHON_THREADPOOL_THREAD_COUNT (default: None ※実行中に設定されるスレッドの数を保証しない) | 環境変数 |
+| 並列処理の数(Activity) | maxConcurrentActivityFunctions | host.json (extensions.durableTask) ※1つのワーカーが処理する数を設定|
+| 並列処理の数(Orchestrator) | maxConcurrentOrchestratorFunctions | host.json (extensions.durableTask) ※1つのワーカーが処理する数を設定|
 
-※Consumption planとNON-Consumption planでデフォルト値が違う
-```
-    int maxConcurrentOrchestratorsDefault = this.inConsumption ? 5 : 10 * Environment.ProcessorCount;
-    int maxConcurrentActivitiesDefault = this.inConsumption ? 10 : 10 * Environment.ProcessorCount;
-```
+※上記パラメータを実際に動作させながら調整していくことになります。
 
-[Azure Functions で Python アプリのスループット パフォーマンスを向上させる](https://learn.microsoft.com/ja-jp/azure/azure-functions/python-scale-performance-reference) に書かれている以下の２つのパラメータを調整して性能をコントロールできます。
+(参考)
+[Azure Functions で Python アプリのスループット パフォーマンスを向上させる](https://learn.microsoft.com/ja-jp/azure/azure-functions/python-scale-performance-reference) 
 
-[アプリケーション設定](https://learn.microsoft.com/ja-jp/azure/azure-functions/functions-app-settings)
 
-| 設定名 | 備考 |
-| --- | --- |
-| FUNCTIONS_WORKER_PROCESS_COUNT | 既定値は 1 です。 許容される最大値は 10 |
-| PYTHON_THREADPOOL_THREAD_COUNT | スレッド数（初期値はNone）|
+### 並列処理の確認
 
-## 性能確認用の処理
-次のような処理を実行して処理時間を計測してみました。
+Activityで1秒のSleep処理を実施し並列数を上げることで全体の処理時間が短縮されることを確認します。  
+※Activityはファンアウト・ファンインのシナリオで最大10並列で処理されるように実装しています。
+
+簡単ですが以下の3パターンの動作確認した結果は以下の様になりました。  
+
+※重量課金プランで実施  
+※並列数 は maxConcurrentActivityFunctions と maxConcurrentOrchestratorFunctions に同じ値を設定  
+※ PYTHON_THREADPOOL_THREAD_COUNT は 1固定  
+
+| インスタンス数 | 並列数 | process数 | 処理時間 |
+|--- | --- | --- | --- |
+| 1 | 1 | 1 | 約100秒 |
+| 1 | 2 | 2 | 約50秒 |
+| 4 | 2 | 2 | 約30秒 |
+
+※処理時間の確認は Azure Storage の table で確認しています。
+![img](./blog_img/blog_img_03.png)
+
+パラメータの変更で並列に処理されて全体の処理時間が短くなっていることを確認できました。
+
+# まとめ
+
+簡単ですが、今回は Azure Functions (Durable Functions) の   
+・Pythonでの実装  
+・非同期 HTTP API  
+・スケーリングとパフォーマンスの調整  
+の紹介でした。
+
 
 # 最後に
 
